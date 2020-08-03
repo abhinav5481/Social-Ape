@@ -42,11 +42,40 @@ app.get("/screams", (req, res) => {
     .catch((err) => console.log(err));
 });
 
-//*************************creating scream for firebase******************
-app.post("/scream", (req, res) => {
+//*************************Post one scream******************
+//apply a middleWare to check if the user is loggedin before posting a scream
+const FbAuth = (req,res,next) => {
+  let idToken;
+  if(req.headers.authorization && req.headers.authorization.startsWith('Bearer ')){
+    idToken = req.headers.authorization.split('Bearer ')[1];
+  }
+  else{
+    console.error('No token found');
+    return res.status(403).json({ errror : 'Unauthorized'})
+  }
+  admin.auth().verifyIdToken(idToken)
+  .then(decodedToken => {
+    req.user = decodedToken;
+    console.log(decodedToken);
+    return db.collection('users')
+    .where('userId','==',req.user.uid)
+    .limit(1)
+    .get();
+  })
+  .then(data => {
+    req.user.handle = data.docs[0].data().handle;
+    return next();
+  })
+  .catch(err => {
+    console.error('Error while verifying token ',err);
+    return res.status(403).json(err);
+  })
+}
+
+app.post("/scream",FbAuth, (req, res) => {
   const newScream = {
     body: req.body.body,
-    userHandle: req.body.userHandle,
+    userHandle: req.user.handle,
     createdAt: new Date().toISOString(),
   };
 
@@ -62,18 +91,17 @@ app.post("/scream", (req, res) => {
 });
 
 //****************************Signup route**************************
-const isEmpty = (string ) => {
-  if(string.trim() === ''){
+const isEmpty = (string) => {
+  if (string.trim() === "") {
     return true;
-  }
-  else return false;
-}
+  } else return false;
+};
 
-const isEmailValid = (email)=> {
+const isEmailValid = (email) => {
   const regEx = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-  if(email.match(regEx)) return true;
+  if (email.match(regEx)) return true;
   else return false;
-}
+};
 
 app.post("/signup", (req, res) => {
   const newUser = {
@@ -83,29 +111,26 @@ app.post("/signup", (req, res) => {
     handle: req.body.handle,
   };
   //email validation
-  let errors ={};
-  if(isEmpty(newUser.email)){
-    errors.email = 'Must not be empty'
-  }
-  else if(!isEmailValid(newUser.email)){
-    errors.email = 'Must be a valid email address'
+  let errors = {};
+  if (isEmpty(newUser.email)) {
+    errors.email = "Must not be empty";
+  } else if (!isEmailValid(newUser.email)) {
+    errors.email = "Must be a valid email address";
   }
 
   //password validation
-  if(isEmpty(newUser.password)){
-    errors.password = 'Must not be empty'
-  }
-  else if(newUser.password !== newUser.confirmPassword){
-    errors.confirmPassword = 'Passwords must match'
+  if (isEmpty(newUser.password)) {
+    errors.password = "Must not be empty";
+  } else if (newUser.password !== newUser.confirmPassword) {
+    errors.confirmPassword = "Passwords must match";
   }
 
   //handle validation
-  if(isEmpty(newUser.handle)){
-    errors.handle = 'Must not be empty'
+  if (isEmpty(newUser.handle)) {
+    errors.handle = "Must not be empty";
   }
 
-  if(Object.keys(errors).length > 0) return res.status(400).json(errors);
-
+  if (Object.keys(errors).length > 0) return res.status(400).json(errors);
 
   //TODO validate user
   let token, userId;
@@ -123,8 +148,8 @@ app.post("/signup", (req, res) => {
       }
     })
     .then((data) => {
-      userId = data.user.uid;  //why user is used here?
-      return data.user.getIdToken();  //why user is used here?
+      userId = data.user.uid; //why user is used here?
+      return data.user.getIdToken(); //why user is used here?
     })
     .then((idToken) => {
       token = idToken;
@@ -151,37 +176,40 @@ app.post("/signup", (req, res) => {
 });
 
 //*************************************Login Route**************** */
-app.post('/login',(req,res) => {
+app.post("/login", (req, res) => {
   const user = {
     email: req.body.email,
-    password: req.body.password
+    password: req.body.password,
   };
 
-  let errors ={};
-  if(isEmpty(user.email)){
-      errors.email = 'Must not be empty';
+  let errors = {};
+  if (isEmpty(user.email)) {
+    errors.email = "Must not be empty";
   }
-  if(isEmpty(user.password)){
-    errors.password = 'Must not be empty';
-}
-if(Object.keys(errors).length > 0) return res.status(400).json(errors);
+  if (isEmpty(user.password)) {
+    errors.password = "Must not be empty";
+  }
+  if (Object.keys(errors).length > 0) return res.status(400).json(errors);
 
-firebase.auth().signInWithEmailAndPassword(user.email,user.password)
-.then(data => {
-  return data.user.getIdToken()
-})
-.then(token => {
-  res.json({token});
-})
-.catch(err => {
-  console.error(err);
-  if(err.code = 'auth/wrong-password'){
-    return res.status(403).json({general : 'Wrong credential, please try again'});
-  }
-  return res.status(500).json({error : err.code});
-})
-  
-})
+  firebase
+    .auth()
+    .signInWithEmailAndPassword(user.email, user.password)
+    .then((data) => {
+      return data.user.getIdToken();
+    })
+    .then((token) => {
+      res.json({ token });
+    })
+    .catch((err) => {
+      console.error(err);
+      if ((err.code = "auth/wrong-password")) {
+        return res
+          .status(403)
+          .json({ general: "Wrong credential, please try again" });
+      }
+      return res.status(500).json({ error: err.code });
+    });
+});
 
 //https://baseurl.com/api/
 exports.api = functions.https.onRequest(app);

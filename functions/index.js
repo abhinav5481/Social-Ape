@@ -7,8 +7,14 @@ const app = express();
 
 const FbAuth = require("./util/fbAuth");
 
-const { getAllScreams, postOneScream } = require("./handlers/screams");
-const { signup, login,uploadImage,addUserDetails,getAuthenticatedUser } = require("./handlers/users");
+const { getAllScreams, postOneScream, getScream, commentOnScream } = require("./handlers/screams");
+const {
+  signup,
+  login,
+  uploadImage,
+  addUserDetails,
+  getAuthenticatedUser,
+} = require("./handlers/users");
 
 //*************************************Scream Route***************** */
 //******getting screams from firebase*******
@@ -18,7 +24,11 @@ app.get("/screams", getAllScreams);
 //apply a middleWare to check if the user is loggedin before posting a scream
 app.post("/scream", FbAuth, postOneScream);
 
+//getting one particular scream with all details related to it
+app.get("/scream/:screamId",getScream);
 
+//posting comment to a particular screams
+app.post('/scream/:screamId/comment', FbAuth,commentOnScream)
 
 //*************************************User Route***************** */
 //********Signup route*******
@@ -28,11 +38,13 @@ app.post("/signup", signup);
 app.post("/login", login);
 
 //******upload image *********/
-app.post("/user/image",FbAuth, uploadImage);
+app.post("/user/image", FbAuth, uploadImage);
 
-//******User details*********/
-app.post("/user",FbAuth, addUserDetails);
-app.get("/user",FbAuth, getAuthenticatedUser);
+//******Posting User details*********/
+app.post("/user", FbAuth, addUserDetails);
+
+//******getting User details*********/
+app.get("/user", FbAuth, getAuthenticatedUser);
 
 //https://baseurl.com/api/
 exports.api = functions.https.onRequest(app);

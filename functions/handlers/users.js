@@ -100,7 +100,7 @@ exports.login = (req, res) => {
     });
 };
 
-//add userdetails
+//add(post) userdetails
 exports.addUserDetails = (req,res) => {
   let userDetails = reduceUserDetails(req.body);
     //this is passed to FbAuth so we have acces to 'user' now

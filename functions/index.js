@@ -8,7 +8,7 @@ const app = express();
 const FbAuth = require("./util/fbAuth");
 
 const { getAllScreams, postOneScream } = require("./handlers/screams");
-const { signup, login } = require("./handlers/users");
+const { signup, login,uploadImage } = require("./handlers/users");
 
 // const firebase = require("firebase");
 // firebase.initializeApp(firebaseConfig);
@@ -25,6 +25,8 @@ app.post("/signup", signup);
 
 //*************************************Login Route**************** */
 app.post("/login", login);
+//***************************************upload image */
+app.post("/user/image",FbAuth, uploadImage);
 
 //https://baseurl.com/api/
 exports.api = functions.https.onRequest(app);

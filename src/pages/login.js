@@ -62,7 +62,7 @@ export class login extends Component {
       email: this.state.email,
       password: this.state.password,
     };
-    this.props.loginUser(userData, this.props.history)
+    this.props.loginUser(userData, this.props.history);
     // axios
     //   .post("/login", userData)                                                //Before Redux
     //   .then((res) => {
@@ -90,7 +90,7 @@ export class login extends Component {
     }
   }
   render() {
-    const { classes,UI: {loading}  } = this.props;
+    const { classes,UI: {loading}  } = this.props;    //=== this.props.ui.loading
     const { errors } = this.state;
     return (
       <Grid container className={classes.form}>
@@ -173,7 +173,7 @@ const mapStateToProps = (state) => ({
 });
 
 const mapActionsToProps = {
-  loginUser
+  loginUser : loginUser
 }
 
 export default connect(mapStateToProps, mapActionsToProps)(withStyles(styles)(login));

@@ -44,6 +44,8 @@ const theme = createMuiTheme({
   }
 });
 
+axios.defaults.baseURL = 'https://us-central1-socialapp-75994.cloudfunctions.net/api';
+
 // let authenticated ;
 const token = localStorage.FBIdToken;
 if(token){
